@@ -49,14 +49,59 @@ def get_video_ids(playlist_id):
             page_token = data.get('nextPageToken')
             if not page_token:
                 break
-        print(f"About to return video_ids: {video_ids}")
-        print(f"Length of video_ids: {len(video_ids)}")
+        # print(f"About to return video_ids: {video_ids}")
+        # print(f"Length of video_ids: {len(video_ids)}")
         return video_ids
     except requests.exceptions.RequestException as e:
         raise e  
 
+# EXTRACT VIDEO DATA
+
+def extract_video_data(video_ids):
+    
+    extracted_data = []
+    
+    def batch_list(video_ids, batch_size):
+        for video_id in range(0, len(video_ids), batch_size):
+            yield video_ids[video_id:video_id + batch_size]
+    
+    try:
+        for batch in batch_list(video_ids, max_result):
+            video_id_str = ",".join(batch)
+            
+            url = f"https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&part=snippet&part=statistics&id={video_id_str}&key={API_KEY}"
+            
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()   
+            
+            for item in data.get('items', []):
+                video_id = item['id']
+                snippet = item['snippet']
+                contentDetails = item['contentDetails']
+                statistics = item['statistics']
+                
+                video_data = {
+                    "video_id": video_id,
+                    "snippet": snippet['title'],
+                    "publishedAt": snippet['publishedAt'],
+                    "duration": contentDetails['duration'],
+                    "viewCount": statistics.get('viewCount', None),
+                    "likeCount": statistics.get('likeCount', None),
+                    "commentCount": statistics.get('commentCount', None)
+                }
+                
+                extracted_data.append(video_data)
+            
+        return extracted_data
+        
+    except requests.exceptions.RequestException as e:
+        raise e
 
 if __name__ == "__main__":
     playlist_id = get_playlist_id()
     video_ids = get_video_ids(playlist_id)
-    print(video_ids)
+    video_data = extract_video_data(video_ids)
+    print(f"Extracted data for {len(video_data)} videos.")
+    print(json.dumps(video_data, indent=4))
+
