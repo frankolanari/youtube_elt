@@ -102,6 +102,3 @@ if __name__ == "__main__":
     playlist_id = get_playlist_id()
     video_ids = get_video_ids(playlist_id)
     video_data = extract_video_data(video_ids)
-    print(f"Extracted data for {len(video_data)} videos.")
-    print(json.dumps(video_data, indent=4))
-
