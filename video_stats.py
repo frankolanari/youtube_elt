@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from datetime import date
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="./.env")
@@ -26,7 +27,6 @@ def get_playlist_id():
         
 # GET VIDEO IDS   
 max_result = 50
-# base_url = f"https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails&key={API_KEY}&playlistId={playlist_id}&maxResults={max_result}"
 
 def get_video_ids(playlist_id):
     print(f"Starting get_video_ids with playlist_id: {playlist_id}")
@@ -49,14 +49,11 @@ def get_video_ids(playlist_id):
             page_token = data.get('nextPageToken')
             if not page_token:
                 break
-        # print(f"About to return video_ids: {video_ids}")
-        # print(f"Length of video_ids: {len(video_ids)}")
         return video_ids
     except requests.exceptions.RequestException as e:
         raise e  
 
 # EXTRACT VIDEO DATA
-
 def extract_video_data(video_ids):
     
     extracted_data = []
@@ -98,7 +95,19 @@ def extract_video_data(video_ids):
     except requests.exceptions.RequestException as e:
         raise e
 
+
+# SAVE TO JSON FILE
+def save_to_json(extracted_data, file_path):
+    with open(file_path, "w", encoding="utf-8") as json_file:
+        json.dump(extracted_data, json_file, indent=4, ensure_ascii=False)
+              
+              
+              
 if __name__ == "__main__":
+    # Main Data Extraction execution
     playlist_id = get_playlist_id()
     video_ids = get_video_ids(playlist_id)
     video_data = extract_video_data(video_ids)
+    # Save data to JSON file with current date
+    file_path = f"video_data_{date.today()}.json"
+    save_to_json(video_data, file_path)
